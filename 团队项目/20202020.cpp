@@ -5,8 +5,11 @@
 #include<Windows.h>
 #include<mysql.h>
 #include<iomanip>
+#include<map>
 #pragma comment(lib, "libmysql.lib")
 using namespace std;
+
+
 class sys {
 public:
 	void init();
@@ -21,7 +24,7 @@ public:
 	void menu();
 
 private:
-		MYSQL mysql, * sock; //声明mysql的句柄 
+	MYSQL mysql, * sock; //声明mysql的句柄 
 	const char* host = "localhost"; //本机连接
 	const char* user = "root"; //mysql用户名 
 	char passwd[100] = {}; //用户密码 
@@ -39,10 +42,10 @@ private:
 	char sex[20] = {};//性别
 	char title[20] = {};//职称
 	char teaching_courses[20] = {};//教课科目
-	char class_number[20] = {};
-	int class_sum = {};
-	float tclass_hour;
-	float eclass_hour;
+	char class_number[20] = {};//班级
+	int class_sum ;//班级数目
+	float tclass_hour;//理论课时
+	float eclass_hour;//实验课时
 };
 void sys::init() //初始化系统
 {
@@ -54,14 +57,12 @@ void sys::init() //初始化系统
 	{
 		cout << "未能成功与mysql建立连接" << endl;//输出连接错误
 		cout << mysql_error(&mysql) << endl;//输出错误信息
-		exit(1);//程序正常退出
+		exit(1);
 	}
 	else
 	{
 		cout << "与Mysql服务器建立连接"<<endl;//输出即为连接成功
 	}
-
-	
 }
 void sys::exitsys()//退出系统
 {
@@ -71,7 +72,7 @@ void sys::exitsys()//退出系统
 }
 
 
-void sys::browse_teacher()
+void sys::browse_teacher()//浏览教师信息
 {
 	sprintf_s(query_sql,"select * from teacherinformation");
 	if (mysql_query(&mysql, query_sql) != 0) //mysql_query函数运行SQL语句,成功返回0
@@ -109,7 +110,7 @@ void sys::browse_teacher()
 	mysql_free_result(result); //释放结果集 
 }
 
-void sys::insert_teacher()
+void sys::insert_teacher()//插入教师信息
 {
 	
 	cout << "请分别输入教师号，姓名，性别，职称，任教课程，班级，班级数目，理论课时，实验课时" << endl;
@@ -132,15 +133,70 @@ void sys::insert_teacher()
 
 	
 }
-void sys::update_teacher()
+void sys::update_teacher()//修改教师信息
 {
 	cout << "请输入要修改的教师号" << endl;
 	cin >> number;
-	cout << "请分别输入要修改的姓名，性别，职称，任教课程，班级，班级数目，理论课时，实验课时" << endl;
-	cin >> name >> sex >> title >> teaching_courses >> class_number >> class_sum >> tclass_hour >> eclass_hour;
-	sprintf_s(query_sql,
-		"update teacherinformation set 姓名='%s',性别='%s',职称='%s',任教课程='%s',班级='%s',班级数目=%d,理论课时=%f,实验课时=%f where 教师号=%d"
-		,name,sex,title,teaching_courses,class_number,class_sum,tclass_hour,eclass_hour,number);
+	map<string, int> mymap = {
+		   { "姓名", 0 },
+		   { "性别", 1},
+		   { "职称", 2 },
+		   { "任教课程", 3 },
+		   { "班级", 4 },
+		   { "班级数目", 5},
+		   { "理论课时", 6 },
+		   { "实验课时", 7 }};
+	string tableupdate;
+	cout << "请输入要修改的教师信息类型" << endl;
+	cin >> tableupdate;
+	while (mymap[tableupdate] > 7 || mymap[tableupdate] < 1)
+	{
+		cout << "输入错误，请重新输入" << endl;
+		cin >> tableupdate;
+	}
+	switch (mymap[tableupdate])
+	{
+	case 0:
+		cout << "请输入修改后的姓名" << endl;
+		cin >> name;
+		sprintf_s(query_sql, "update teacherinformation set 姓名='%s'where 教师号=%d", name, number);
+		break;
+	case 1:
+		cout << "请输入修改后的性别" << endl;
+		cin >> sex;
+		sprintf_s(query_sql, "update teacherinformation set 性别='%s'where 教师号=%d", sex, number);
+		break;
+	case 2:
+		cout << "请输入修改后的职称" << endl;
+		cin >> title;
+		sprintf_s(query_sql, "update teacherinformation set 职称='%s'where 教师号=%d", title, number);
+		break;
+	case 3:
+		cout << "请输入修改后的任教课程" << endl;
+		cin >> teaching_courses;
+		sprintf_s(query_sql, "update teacherinformation set 任教课程='%s'where 教师号=%d", teaching_courses, number);
+		break;
+	case 4:
+		cout << "请输入修改后的班级" << endl;
+		cin >> class_number;
+		sprintf_s(query_sql, "update teacherinformation set 班级='%s'where 教师号=%d", class_number, number);
+		break;
+	case 5:
+		cout << "请输入修改后的班级数目" << endl;
+		cin >> class_sum;
+		sprintf_s(query_sql, "update teacherinformation set 班级数目='%d'where 教师号=%d", class_sum, number);
+		break;
+	case 6:
+		cout << "请输入修改后的理论课时" << endl;
+		cin >> tclass_hour;
+		sprintf_s(query_sql, "update teacherinformation set 理论课时='%f'where 教师号=%d", tclass_hour, number);
+		break;
+	case 7:
+		cout << "请输入修改后的实验课时" << endl;
+		cin >> eclass_hour;
+		sprintf_s(query_sql, "update teacherinformation set 实验课时='%f'where 教师号=%d", eclass_hour, number);
+		break;
+	}
 	if (mysql_query(&mysql, query_sql) != 0) //mysql_query函数运行SQL语句,成功返回0
 	{
 		cout << "sql语句出现错误" << endl;
@@ -156,7 +212,7 @@ void sys::update_teacher()
 
 	
 }
-void sys::delete_teacher()
+void sys::delete_teacher()//删除教师信息
 {
 	cout << "请输入要删除的教师号" << endl;
 	cin >> number;
@@ -176,7 +232,7 @@ void sys::delete_teacher()
 	}
 
 }
-void sys::Totalhours_singelTask()
+void sys::Totalhours_singelTask()//教师工作量计算
 {
 	sprintf_s(query_sql, "delete  from teacher;");
 	if (mysql_query(&mysql, query_sql) != 0) //mysql_query函数运行SQL语句,成功返回0
@@ -217,7 +273,7 @@ void sys::Totalhours_singelTask()
 	}
 	
 }
-void sys::teacherTask_out()
+void sys::teacherTask_out()//查询教师工作量信息
 {
 	sprintf_s(query_sql, "SELECT *  FROM teacher ");
 	if (mysql_query(&mysql, query_sql) != 0) //mysql_query函数运行SQL语句,成功返回0
@@ -255,7 +311,7 @@ void sys::teacherTask_out()
 	}
 	mysql_free_result(result); //释放结果集 
 }
-void sys::search_teacher()
+void sys::search_teacher()//查询教师所有信息
 {
 	cout << "请输入要查询的教师号" << endl;
 	cin >> number;
@@ -294,9 +350,8 @@ void sys::search_teacher()
 	}
 	mysql_free_result(result); //释放结果集 
 }
-void sys::menu()
+void sys::menu()//显示菜单
 {
-	cout  << "进入教师工作量管理系统" << endl << endl;
 	cout  << "教师工作量管理系统" << endl;
 	cout  << "1.输入教师授课教学信息" << endl;
 	cout  << "2.修改教师授课教学信息" << endl;
@@ -304,45 +359,53 @@ void sys::menu()
 	cout  << "4.浏览教师授课教学信息" << endl;
 	cout  << "5.浏览教师教学的工作量" << endl;
 	cout  << "6.查询某教师的所有信息" << endl;
-	cout  << "7.退出系统" << endl;
+	cout  << "7.显示菜单" << endl;
+	cout  << "8.退出系统" << endl;
 
 }
 int main()
 {
-	int menu_ch;
-	char if_ch;
+	int menu_ch;//菜单选项
+	char if_ch;//继续选项
 	sys teachersys;
 	teachersys.init();
+	cout << "进入教师工作量管理系统" << endl << endl;
 	teachersys.menu();
 	while (1)
 	{
 		cout << endl;
 		cout  << "请输入你要进行的操作" << endl;
 		cin >> menu_ch;
-		while (menu_ch > 7 || menu_ch < 1)
+		while (menu_ch > 8 || menu_ch < 1)
 		{
 			cout <<"输入错误，请重新输入" << endl;
 			cin >> menu_ch;
 		}
 		switch (menu_ch)
 		{
-		case 1:teachersys.insert_teacher(); break;
-		case 2:teachersys.update_teacher(); break;
-		case 3:teachersys.delete_teacher(); break;
-		case 4:teachersys.browse_teacher(); break;
+		case 1:teachersys.insert_teacher(); 
+			   break;
+		case 2:teachersys.update_teacher(); 
+			   break;
+		case 3:teachersys.delete_teacher(); 
+			   break;
+		case 4:teachersys.browse_teacher();
+			   break;
 		case 5:teachersys.Totalhours_singelTask(); 
 			   teachersys.teacherTask_out();
 			   break;
 		case 6:teachersys.Totalhours_singelTask(); 
 			   teachersys.search_teacher(); 
 			   break;
-		case 7:teachersys.exitsys(); 
+		case 7:teachersys.menu(); 
+			   break;
+		case 8:teachersys.exitsys();
+			   break;
 		}
 		cout << endl << "如果你想继续,请输入Y,否则退出系统" << endl;
 		cin >> if_ch;
 		if (if_ch != 'Y')
 			break;
-
 	}
 	cout << "成功退出系统" << endl;
 	exit(0);
